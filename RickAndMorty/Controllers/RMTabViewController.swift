@@ -7,6 +7,7 @@
 
 import UIKit
 
+/// Controller to house tabs controllers
 class RMTabViewController: UITabBarController {
 
     override func viewDidLoad() {
