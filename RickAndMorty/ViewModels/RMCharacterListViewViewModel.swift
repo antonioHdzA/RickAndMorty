@@ -57,6 +57,9 @@ final class RMCharacterListViewViewModel: NSObject {
     public var shouldShowLoadMoreIndicator: Bool {
         return apiInfo?.next != nil
     }
+
+    private var isLoadingMoreContent: Bool = false
+
 }
 
 extension RMCharacterListViewViewModel: UICollectionViewDataSource {
@@ -70,6 +73,19 @@ extension RMCharacterListViewViewModel: UICollectionViewDataSource {
         let viewModel = cellViewModels[indexPath.row]
         cell.configure(with: viewModel)
         return cell
+    }
+
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        guard kind == UICollectionView.elementKindSectionFooter, let footer = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: RMFooterLoadingCollectionReusableView.identifier, for: indexPath) as? RMFooterLoadingCollectionReusableView else {
+            return UICollectionReusableView()
+        }
+        footer.startAnimating()
+        return footer
+    }
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
+        guard shouldShowLoadMoreIndicator else { return .zero }
+        return CGSize(width: collectionView.frame.width, height: 100)
     }
 }
 
@@ -89,7 +105,15 @@ extension RMCharacterListViewViewModel: UICollectionViewDelegate, UICollectionVi
 // MARK: - ScrollView
 extension RMCharacterListViewViewModel: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard shouldShowLoadMoreIndicator else { return }
+        guard shouldShowLoadMoreIndicator, !isLoadingMoreContent else { return }
+        let offset = scrollView.contentOffset.y
+        let totalContentHeight = scrollView.contentSize.height
+        let totalScrollViewFixedHeight = scrollView.frame.size.height
+
+        // should start fetching more characters if the user has reached end of scroll
+        if offset >= (totalContentHeight - totalScrollViewFixedHeight - 120) {
+            isLoadingMoreContent = true
+        }
 
     }
 }
